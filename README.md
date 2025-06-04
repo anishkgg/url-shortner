@@ -1,4 +1,4 @@
-# url-shortener project based on SPRING BOOT
+# url-shortener project based on SPRING BOOT framework
 # Getting Started Quickly
 
 ### Reference Documentation
