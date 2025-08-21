@@ -8,8 +8,10 @@ import java.time.LocalDateTime;
 @Data
 public class UrlDto {
     @Id
+    @GeneratedValue
     private Long id;
     private String originalUrl;
     private String shortUrl;
     private LocalDateTime expiryDate;
+    private Long clicks;
 }

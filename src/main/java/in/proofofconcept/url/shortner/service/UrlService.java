@@ -8,6 +8,8 @@ import java.util.Random;
 import java.util.UUID;
 
 import in.proofofconcept.url.shortner.dto.UrlDto;
+import in.proofofconcept.url.shortner.expection.CustomException;
+import org.hibernate.boot.model.naming.IllegalIdentifierException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,7 +32,10 @@ public class UrlService {
 	
 	public Url findByShortUrl(String shortUrl) {
 		Url url = urlRepository.findByShortUrl(shortUrl);
+
 		if (url != null && url.getExpiryDate().isAfter(LocalDateTime.now())) {
+			url.setClicks(url.getClicks() + 1);
+			urlRepository.save(url);
 			return url;
 		} else {
 			return null;
@@ -39,33 +44,43 @@ public class UrlService {
 	public Url saveUrl(Url url) {
 		if (url.getShortUrl() == null || url.getShortUrl().isBlank()) {
 			// auto-generate short URL
-			url.setShortUrl(generateShortUrl());
+			url.setShortUrl(generateShortUrl(url.getOriginalUrl()));
+		} else {
+			// custom alias provided
+			if (urlRepository.findByShortUrl(url.getShortUrl()) != null) {
+				throw new CustomException("Custom alias is already in use");
+			}
 		}
 
 		if (url.getExpiryDate() == null) {
 			// Set default expiry: 30 days
 			url.setExpiryDate(LocalDateTime.now().plusDays(30));
 		}
+		url.setClicks(0L);
 
 		return urlRepository.save(url);
 	}
 
-	public String generateShortUrl() {
-		int length = 8;
-		String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-		StringBuilder sb = new StringBuilder();
-		Random random = new Random();
+	public List<Url> saveMultipleUrls(List<Url> urls) {
+		return urls.stream().map(this::saveUrl).toList();
+	}
 
-		for (int i = 0; i < length; i++) {
-			sb.append(chars.charAt(random.nextInt(chars.length())));
+	public String generateShortUrl(String originalUrl) {
+		try {
+			java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+			byte[] hash = digest.digest(originalUrl.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+			String encoded = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+			String shortUrl = encoded.substring(0, 8);
+
+			// In case of a hash collision, append a random character until it's unique
+			while (urlRepository.findByShortUrl(shortUrl) != null) {
+				shortUrl += (char) (new java.util.Random().nextInt(26) + 'a');
+			}
+			return shortUrl;
+		} catch (java.security.NoSuchAlgorithmException e) {
+			// This should never happen
+			throw new RuntimeException("SHA-256 algorithm not found", e);
 		}
-
-		// Optional: check uniqueness
-		while (urlRepository.findByShortUrl(sb.toString()) != null) {
-			sb.setCharAt(random.nextInt(length), chars.charAt(random.nextInt(chars.length())));
-		}
-
-		return sb.toString();
 	}
 
 	public Url getOriginalUrlById(Long id) {
@@ -85,12 +100,20 @@ public class UrlService {
 	}
 
 	public boolean deleteUrl(Long id) {
-		if(urlRepository.existsById(id)) {
-			urlRepository.deleteById(id);
-			return true;
-		} else
-			return false;
+		try {
+			if(urlRepository.existsById(id)) {
+				urlRepository.deleteById(id);
+				return true;
+			}
+		} catch (Exception e) {
+			System.out.println(e);
+			throw new CustomException("this url is not valid");
+		}
+		return false;
 	}
+
+
+
 
 
 	public Url fromDto(UrlDto dto) {

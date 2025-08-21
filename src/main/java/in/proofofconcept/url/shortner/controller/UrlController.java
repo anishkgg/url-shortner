@@ -41,11 +41,29 @@ public class UrlController {
         }
     }
 
+    
+
     @PostMapping("save")
-    public UrlDto createShortUrl(@RequestBody UrlDto urlDto) {
-        Url url = urlService.fromDto(urlDto);
-        Url savedUrl = urlService.saveUrl(url);
-        return urlService.toDto(savedUrl);
+    public ResponseEntity<?> createShortUrl(@RequestBody UrlDto urlDto) {
+        try {
+            Url url = urlService.fromDto(urlDto);
+            Url savedUrl = urlService.saveUrl(url);
+            return ResponseEntity.ok(urlService.toDto(savedUrl));
+        } catch (in.proofofconcept.url.shortner.expection.CustomException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("save/batch")
+    public ResponseEntity<?> createMultipleShortUrls(@RequestBody List<UrlDto> urlDtos) {
+        try {
+            List<Url> urls = urlDtos.stream().map(urlService::fromDto).toList();
+            List<Url> savedUrls = urlService.saveMultipleUrls(urls);
+            List<UrlDto> savedUrlDtos = savedUrls.stream().map(urlService::toDto).toList();
+            return ResponseEntity.ok(savedUrlDtos);
+        } catch (in.proofofconcept.url.shortner.expection.CustomException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @PutMapping("update/{id}")
