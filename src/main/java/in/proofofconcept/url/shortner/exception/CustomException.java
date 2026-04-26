@@ -1,4 +1,4 @@
-package in.proofofconcept.url.shortner.expection;
+package in.proofofconcept.url.shortner.exception;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

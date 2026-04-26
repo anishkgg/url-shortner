@@ -1,5 +1,13 @@
 package in.proofofconcept.url.shortner.controller;
-import in.proofofconcept.url.shortner.dto.UrlDto;
+import in.proofofconcept.url.shortner.dto.request.UrlRequest;
+import in.proofofconcept.url.shortner.dto.response.ClickAnalyticsResponse;
+import in.proofofconcept.url.shortner.dto.response.UrlResponse;
+import in.proofofconcept.url.shortner.exception.CustomException;
+import in.proofofconcept.url.shortner.model.ClickAnalytics;
+import in.proofofconcept.url.shortner.service.AnalyticsService;
+import in.proofofconcept.url.shortner.service.RateLimitingService;
+import io.github.bucket4j.Bucket;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,60 +23,104 @@ import java.util.List;
 public class UrlController {
 
 	private final UrlService urlService;
+    private final AnalyticsService analyticsService;
+    private final RateLimitingService rateLimitingService;
 
     @Autowired
-    UrlController(UrlService urlService) {
+    UrlController(UrlService urlService, AnalyticsService analyticsService, RateLimitingService rateLimitingService) {
         this.urlService = urlService;
+        this.analyticsService = analyticsService;
+        this.rateLimitingService = rateLimitingService;
     }
 
     @GetMapping("all")
-   public ResponseEntity<List<UrlDto>> getAllUrls() {
-        return ResponseEntity.ok(urlService.getAllDto());
+   public ResponseEntity<List<UrlResponse>> getAllUrls() {
+        return ResponseEntity.ok(urlService.getAllResponses());
     }
 
     @GetMapping("get/{id}")
-    public Url getOriginalUrlById(@PathVariable Long id) {
-        return urlService.getOriginalUrlById(id);
+    public ResponseEntity<UrlResponse> getOriginalUrlById(@PathVariable Long id) {
+        Url url = urlService.getOriginalUrlById(id);
+        if (url != null) {
+            return ResponseEntity.ok(urlService.toResponse(url));
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("{shortUrl}")
-    public ResponseEntity<UrlDto> getOriginalUrl(@PathVariable String shortUrl) {
+    public ResponseEntity<?> getOriginalUrl(@PathVariable String shortUrl, 
+                                            @RequestHeader(value = "X-Password", required = false) String password,
+                                            HttpServletRequest request) {
+        // Rate Limiting Check
+        Bucket bucket = rateLimitingService.getRedirectBucket(request.getRemoteAddr());
+        if (!bucket.tryConsume(1)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Too many redirect requests. Slow down!");
+        }
+
         Url url = urlService.findByShortUrl(shortUrl);
         if(url != null) {
-            return ResponseEntity.ok(urlService.toDto(url));
+            // 1. Password Check
+            if (url.getPassword() != null) {
+                if (password == null || !urlService.verifyPassword(url, password)) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body("This URL is password protected. Please provide the correct password in the X-Password header.");
+                }
+            }
+
+            // 2. Record Analytics
+            analyticsService.recordClick(url, request);
+
+            // 3. Handle One-Time Use
+            UrlResponse response = urlService.toResponse(url);
+            urlService.handleOneTimeUse(url);
+
+            return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
+    @GetMapping("{id}/analytics")
+    public ResponseEntity<List<ClickAnalyticsResponse>> getUrlAnalytics(@PathVariable Long id) {
+        return ResponseEntity.ok(analyticsService.getAnalyticsByUrlId(id));
+    }
+
+    @GetMapping("{id}/analytics/summary")
+    public ResponseEntity<java.util.Map<String, Object>> getUrlAnalyticsSummary(@PathVariable Long id) {
+        return ResponseEntity.ok(analyticsService.getAnalyticsSummary(id));
+    }
+
     
 
     @PostMapping("save")
-    public ResponseEntity<?> createShortUrl(@RequestBody UrlDto urlDto) {
-        try {
-            Url url = urlService.fromDto(urlDto);
-            Url savedUrl = urlService.saveUrl(url);
-            return ResponseEntity.ok(urlService.toDto(savedUrl));
-        } catch (in.proofofconcept.url.shortner.expection.CustomException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    public ResponseEntity<UrlResponse> createShortUrl(@RequestBody UrlRequest urlRequest, HttpServletRequest request) {
+        // Rate Limiting Check
+        Bucket bucket = rateLimitingService.getCreateUrlBucket(request.getRemoteAddr());
+        if (!bucket.tryConsume(1)) {
+            throw new CustomException("Rate limit exceeded. You can only create 10 URLs per hour.");
         }
+
+        Url url = urlService.fromRequest(urlRequest);
+        Url savedUrl = urlService.saveUrl(url);
+        return ResponseEntity.ok(urlService.toResponse(savedUrl));
     }
 
     @PostMapping("save/batch")
-    public ResponseEntity<?> createMultipleShortUrls(@RequestBody List<UrlDto> urlDtos) {
-        try {
-            List<Url> urls = urlDtos.stream().map(urlService::fromDto).toList();
-            List<Url> savedUrls = urlService.saveMultipleUrls(urls);
-            List<UrlDto> savedUrlDtos = savedUrls.stream().map(urlService::toDto).toList();
-            return ResponseEntity.ok(savedUrlDtos);
-        } catch (in.proofofconcept.url.shortner.expection.CustomException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    public ResponseEntity<List<UrlResponse>> createMultipleShortUrls(@RequestBody List<UrlRequest> urlRequests) {
+        List<Url> urls = urlRequests.stream().map(urlService::fromRequest).toList();
+        List<Url> savedUrls = urlService.saveMultipleUrls(urls);
+        List<UrlResponse> responses = savedUrls.stream().map(urlService::toResponse).toList();
+        return ResponseEntity.ok(responses);
     }
 
     @PutMapping("update/{id}")
-    public Url updateUrl(@PathVariable Long id, @RequestBody Url updatedUrl) {
-        return urlService.updateUrl(id, updatedUrl);
+    public ResponseEntity<UrlResponse> updateUrl(@PathVariable Long id, @RequestBody UrlRequest urlRequest) {
+        Url updatedUrl = urlService.fromRequest(urlRequest);
+        Url savedUrl = urlService.updateUrl(id, updatedUrl);
+        if (savedUrl != null) {
+            return ResponseEntity.ok(urlService.toResponse(savedUrl));
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("delete/{id}")

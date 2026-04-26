@@ -26,4 +26,7 @@ public class Url {
 	private String shortUrl;
 	private LocalDateTime expiryDate;
 	private Long clicks;
+	
+	private String password; // Hashed
+	private boolean isOneTimeUse;
 }

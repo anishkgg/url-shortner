@@ -7,15 +7,18 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-import in.proofofconcept.url.shortner.dto.UrlDto;
-import in.proofofconcept.url.shortner.expection.CustomException;
+import in.proofofconcept.url.shortner.exception.CustomException;
 import org.hibernate.boot.model.naming.IllegalIdentifierException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import in.proofofconcept.url.shortner.dto.request.UrlRequest;
+import in.proofofconcept.url.shortner.dto.response.UrlResponse;
 import in.proofofconcept.url.shortner.model.Url;
 import in.proofofconcept.url.shortner.repository.UrlRepository;
+import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.ai.chat.model.ChatModel;
 
 @Service
 public class UrlService {
@@ -23,13 +26,39 @@ public class UrlService {
 
 	private final UrlRepository urlRepository;
 	private final ModelMapper modelMapper;
+	private final ChatModel chatModel;
+	private final QrCodeService qrCodeService;
 
 	@Autowired
-    UrlService(UrlRepository urlRepository, ModelMapper modelMapper) {
+    UrlService(UrlRepository urlRepository, ModelMapper modelMapper, ChatModel chatModel, 
+	           QrCodeService qrCodeService) {
         this.urlRepository = urlRepository;
 		this.modelMapper = modelMapper;
+		this.chatModel = chatModel;
+		this.qrCodeService = qrCodeService;
     }
 	
+	public String generateSmartSlug(String originalUrl) {
+		String prompt = "Generate a short, 2-word, hyphenated slug for this URL: " + originalUrl + 
+		                ". Examples: 'quick-bake', 'travel-tips'. Return only the slug and nothing else.";
+		try {
+			String slug = chatModel.call(prompt).toLowerCase().trim();
+			// Basic cleanup in case AI adds extra text
+			slug = slug.replaceAll("[^a-z0-9-]", "");
+			
+			// Collision check
+			String finalSlug = slug;
+			int counter = 1;
+			while (urlRepository.findByShortUrl(finalSlug) != null) {
+				finalSlug = slug + "-" + counter++;
+			}
+			return finalSlug;
+		} catch (Exception e) {
+			// Fallback to standard hash-based short URL if AI fails
+			return generateShortUrl(originalUrl);
+		}
+	}
+
 	public Url findByShortUrl(String shortUrl) {
 		Url url = urlRepository.findByShortUrl(shortUrl);
 
@@ -42,6 +71,10 @@ public class UrlService {
 		}
 	}
 	public Url saveUrl(Url url) {
+		if (url.getPassword() != null && !url.getPassword().isBlank()) {
+			url.setPassword(BCrypt.hashpw(url.getPassword(), BCrypt.gensalt()));
+		}
+		
 		if (url.getShortUrl() == null || url.getShortUrl().isBlank()) {
 			// auto-generate short URL
 			url.setShortUrl(generateShortUrl(url.getOriginalUrl()));
@@ -116,18 +149,40 @@ public class UrlService {
 
 
 
-	public Url fromDto(UrlDto dto) {
-		return modelMapper.map(dto, Url.class);
+	public Url fromRequest(UrlRequest request) {
+		return modelMapper.map(request, Url.class);
 	}
 
-	public UrlDto toDto(Url url) {
-		return modelMapper.map(url, UrlDto.class);
+	public UrlResponse toResponse(Url url) {
+		String qrCode = qrCodeService.generateQrCodeBase64(url.getShortUrl(), 250, 250);
+		return UrlResponse.builder()
+				.id(url.getId())
+				.originalUrl(url.getOriginalUrl())
+				.shortUrl(url.getShortUrl())
+				.expiryDate(url.getExpiryDate())
+				.clicks(url.getClicks())
+				.qrCodeBase64(qrCode)
+				.isPasswordProtected(url.getPassword() != null)
+				.isOneTimeUse(url.isOneTimeUse())
+				.build();
 	}
 
-	public List<UrlDto> getAllDto() {
+	public boolean verifyPassword(Url url, String rawPassword) {
+		if (url.getPassword() == null) return true;
+		if (rawPassword == null) return false;
+		return BCrypt.checkpw(rawPassword, url.getPassword());
+	}
+
+	public void handleOneTimeUse(Url url) {
+		if (url.isOneTimeUse()) {
+			urlRepository.delete(url);
+		}
+	}
+
+	public List<UrlResponse> getAllResponses() {
 		return urlRepository.findAll()
 				.stream()
-				.map(this::toDto)
+				.map(this::toResponse)
 				.toList();
 	}
 
