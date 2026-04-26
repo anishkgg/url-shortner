@@ -29,4 +29,8 @@ public class Url {
 	
 	private String password; // Hashed
 	private boolean isOneTimeUse;
+
+	private String summary;
+	private String category;
+	private boolean isSafe;
 }

@@ -15,4 +15,7 @@ public class UrlResponse {
     private String qrCodeBase64;
     private boolean isPasswordProtected;
     private boolean isOneTimeUse;
+    private String summary;
+    private String category;
+    private boolean isSafe;
 }

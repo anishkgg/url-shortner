@@ -74,6 +74,13 @@ public class UrlService {
 		if (url.getPassword() != null && !url.getPassword().isBlank()) {
 			url.setPassword(BCrypt.hashpw(url.getPassword(), BCrypt.gensalt()));
 		}
+
+		// Perform AI Enhancements
+		enrichUrlWithAI(url);
+		
+		if (!url.isSafe()) {
+			throw new CustomException("Security Alert: The AI has flagged this URL as potentially unsafe or malicious.");
+		}
 		
 		if (url.getShortUrl() == null || url.getShortUrl().isBlank()) {
 			// auto-generate short URL
@@ -164,7 +171,40 @@ public class UrlService {
 				.qrCodeBase64(qrCode)
 				.isPasswordProtected(url.getPassword() != null)
 				.isOneTimeUse(url.isOneTimeUse())
+				.summary(url.getSummary())
+				.category(url.getCategory())
+				.isSafe(url.isSafe())
 				.build();
+	}
+
+	private void enrichUrlWithAI(Url url) {
+		String prompt = """
+				Analyze this URL: %s
+				Provide a response in the following EXACT format:
+				Safe: [Yes/No]
+				Summary: [1-sentence description]
+				Category: [Work/Shopping/Social/Education/Entertainment/Other]
+				""".formatted(url.getOriginalUrl());
+
+		try {
+			String response = chatModel.call(prompt);
+			String[] lines = response.split("\n");
+			
+			for (String line : lines) {
+				if (line.toLowerCase().startsWith("safe:")) {
+					url.setSafe(line.toLowerCase().contains("yes"));
+				} else if (line.toLowerCase().startsWith("summary:")) {
+					url.setSummary(line.substring(line.indexOf(":") + 1).trim());
+				} else if (line.toLowerCase().startsWith("category:")) {
+					url.setCategory(line.substring(line.indexOf(":") + 1).trim());
+				}
+			}
+		} catch (Exception e) {
+			// Fallback if AI fails
+			url.setSafe(true); 
+			url.setSummary("No summary available");
+			url.setCategory("Uncategorized");
+		}
 	}
 
 	public boolean verifyPassword(Url url, String rawPassword) {
