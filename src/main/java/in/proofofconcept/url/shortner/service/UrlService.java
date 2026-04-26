@@ -16,27 +16,38 @@ import org.springframework.stereotype.Service;
 import in.proofofconcept.url.shortner.dto.request.UrlRequest;
 import in.proofofconcept.url.shortner.dto.response.UrlResponse;
 import in.proofofconcept.url.shortner.model.Url;
+import in.proofofconcept.url.shortner.model.User;
+import in.proofofconcept.url.shortner.repository.UserRepository;
 import in.proofofconcept.url.shortner.repository.UrlRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 public class UrlService {
 
 
 	private final UrlRepository urlRepository;
+	private final UserRepository userRepository;
 	private final ModelMapper modelMapper;
 	private final ChatModel chatModel;
 	private final QrCodeService qrCodeService;
 
 	@Autowired
-    UrlService(UrlRepository urlRepository, ModelMapper modelMapper, ChatModel chatModel, 
+    UrlService(UrlRepository urlRepository, UserRepository userRepository, ModelMapper modelMapper, ChatModel chatModel, 
 	           QrCodeService qrCodeService) {
         this.urlRepository = urlRepository;
+		this.userRepository = userRepository;
 		this.modelMapper = modelMapper;
 		this.chatModel = chatModel;
 		this.qrCodeService = qrCodeService;
     }
+
+	public User getCurrentUser() {
+		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		return userRepository.findByUsername(username)
+				.orElseThrow(() -> new CustomException("User not found in context"));
+	}
 	
 	public String generateSmartSlug(String originalUrl) {
 		String prompt = "Generate a short, 2-word, hyphenated slug for this URL: " + originalUrl + 
@@ -71,6 +82,9 @@ public class UrlService {
 		}
 	}
 	public Url saveUrl(Url url) {
+		// Associate with current user
+		url.setUser(getCurrentUser());
+
 		if (url.getPassword() != null && !url.getPassword().isBlank()) {
 			url.setPassword(BCrypt.hashpw(url.getPassword(), BCrypt.gensalt()));
 		}
@@ -220,8 +234,10 @@ public class UrlService {
 	}
 
 	public List<UrlResponse> getAllResponses() {
+		User currentUser = getCurrentUser();
 		return urlRepository.findAll()
 				.stream()
+				.filter(url -> url.getUser() != null && url.getUser().getId().equals(currentUser.getId()))
 				.map(this::toResponse)
 				.toList();
 	}

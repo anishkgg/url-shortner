@@ -4,6 +4,8 @@ import in.proofofconcept.url.shortner.dto.response.ClickAnalyticsResponse;
 import in.proofofconcept.url.shortner.dto.response.UrlResponse;
 import in.proofofconcept.url.shortner.exception.CustomException;
 import in.proofofconcept.url.shortner.model.ClickAnalytics;
+import in.proofofconcept.url.shortner.model.Url;
+import in.proofofconcept.url.shortner.model.User;
 import in.proofofconcept.url.shortner.service.AnalyticsService;
 import in.proofofconcept.url.shortner.service.RateLimitingService;
 import io.github.bucket4j.Bucket;
@@ -124,19 +126,28 @@ public class UrlController {
     }
 
     @DeleteMapping("delete/{id}")
-    public String deleteUrl(@PathVariable Long id) {
-        boolean delete = urlService.deleteUrl(id);
-        if(!delete) {
-            return "URL is not found with Id" + id;
-        } else {
-            return "Delete Successfully";
+    public ResponseEntity<String> deleteUrl(@PathVariable Long id) {
+        Url url = urlService.getOriginalUrlById(id);
+        if (url == null) {
+            return ResponseEntity.notFound().build();
         }
+        
+        // Ownership Check
+        User currentUser = urlService.getCurrentUser();
+        if (url.getUser() == null || !url.getUser().getId().equals(currentUser.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to delete this URL");
+        }
+
+        urlService.deleteUrl(id);
+        return ResponseEntity.ok("Delete Successfully");
     }
 
     @DeleteMapping("delete/all")
     public ResponseEntity<String> deleteAll() {
-        urlService.deleteAllUrls();
-        return ResponseEntity.ok("All Urls have been deleted");
+        User currentUser = urlService.getCurrentUser();
+        List<UrlResponse> userUrls = urlService.getAllResponses();
+        userUrls.forEach(u -> urlService.deleteUrl(u.getId()));
+        return ResponseEntity.ok("All your Urls have been deleted");
     }
 
 }
