@@ -3,8 +3,6 @@ import in.proofofconcept.url.shortner.dto.request.UrlRequest;
 import in.proofofconcept.url.shortner.dto.response.ClickAnalyticsResponse;
 import in.proofofconcept.url.shortner.dto.response.UrlResponse;
 import in.proofofconcept.url.shortner.exception.CustomException;
-import in.proofofconcept.url.shortner.model.ClickAnalytics;
-import in.proofofconcept.url.shortner.model.Url;
 import in.proofofconcept.url.shortner.model.User;
 import in.proofofconcept.url.shortner.service.AnalyticsService;
 import in.proofofconcept.url.shortner.service.RateLimitingService;
@@ -18,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import in.proofofconcept.url.shortner.model.Url;
 import in.proofofconcept.url.shortner.service.UrlService;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -76,7 +75,9 @@ public class UrlController {
             UrlResponse response = urlService.toResponse(url);
             urlService.handleOneTimeUse(url);
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(url.getOriginalUrl()))
+                    .body(response);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }

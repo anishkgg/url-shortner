@@ -1,0 +1,132 @@
+{
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\UrlShortnerApplication.java": {
+    "mtime": 1780235709.25151,
+    "ast_hash": "65a20d3d552676d73497cc91475bcf54",
+    "semantic_hash": "65a20d3d552676d73497cc91475bcf54"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\config\\SecurityConfig.java": {
+    "mtime": 1780235709.25151,
+    "ast_hash": "6b537b78d9414ebad48489e69175bc0f",
+    "semantic_hash": "6b537b78d9414ebad48489e69175bc0f"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\controller\\AuthController.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "10dee726214a1d81c322b3f953bcfcdf",
+    "semantic_hash": "10dee726214a1d81c322b3f953bcfcdf"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\controller\\UrlController.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "1d24ef135e35fd5abebe67be7c2f27d2",
+    "semantic_hash": "1d24ef135e35fd5abebe67be7c2f27d2"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\dto\\request\\AuthRequest.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "c0ae621eca56bab0a7f0be7851ddfb78",
+    "semantic_hash": "c0ae621eca56bab0a7f0be7851ddfb78"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\dto\\request\\UrlRequest.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "e546ab67191d6b7547c4d4e355c2a17e",
+    "semantic_hash": "e546ab67191d6b7547c4d4e355c2a17e"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\dto\\response\\AuthResponse.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "11a1443bfca5d8c1c2be4691cdf9ac27",
+    "semantic_hash": "11a1443bfca5d8c1c2be4691cdf9ac27"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\dto\\response\\ClickAnalyticsResponse.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "fb348c1c7e14d79592424b395084ecb2",
+    "semantic_hash": "fb348c1c7e14d79592424b395084ecb2"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\dto\\response\\ErrorResponse.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "c5a2b75c2b9c189fa1e96b596bf98f60",
+    "semantic_hash": "c5a2b75c2b9c189fa1e96b596bf98f60"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\dto\\response\\UrlResponse.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "c35744e038f64db10eb9f0a85dfaf053",
+    "semantic_hash": "c35744e038f64db10eb9f0a85dfaf053"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\exception\\CustomException.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "36018d67e8e55516de81f28402c8df0b",
+    "semantic_hash": "36018d67e8e55516de81f28402c8df0b"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\exception\\GlobalExceptionHandler.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "0f1ff70ce514ad5439aa6965171f6c4b",
+    "semantic_hash": "0f1ff70ce514ad5439aa6965171f6c4b"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\model\\ClickAnalytics.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "1858c2afacc09421feebc39c9350c4ae",
+    "semantic_hash": "1858c2afacc09421feebc39c9350c4ae"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\model\\Url.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "61bbe376cf055e387ff34114513f520a",
+    "semantic_hash": "61bbe376cf055e387ff34114513f520a"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\model\\User.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "ef7d83d3375de602c924ee70c1e743dc",
+    "semantic_hash": "ef7d83d3375de602c924ee70c1e743dc"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\repository\\ClickAnalyticsRepository.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "52d1121df75df878db97afa23cc7ea79",
+    "semantic_hash": "52d1121df75df878db97afa23cc7ea79"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\repository\\UrlRepository.java": {
+    "mtime": 1780235709.2583938,
+    "ast_hash": "c55815d9ed98392418eadc4b85e79aa6",
+    "semantic_hash": "c55815d9ed98392418eadc4b85e79aa6"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\repository\\UserRepository.java": {
+    "mtime": 1780235709.27427,
+    "ast_hash": "b9330a42cca41a3c8b875dc8794ec5cb",
+    "semantic_hash": "b9330a42cca41a3c8b875dc8794ec5cb"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\service\\AnalyticsService.java": {
+    "mtime": 1780235709.27427,
+    "ast_hash": "7d9fb8af95d20a4d48bc9a0e22d0dad8",
+    "semantic_hash": "7d9fb8af95d20a4d48bc9a0e22d0dad8"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\service\\AuthService.java": {
+    "mtime": 1780235709.2762766,
+    "ast_hash": "690d44020de83cd4ce3989571c642e46",
+    "semantic_hash": "690d44020de83cd4ce3989571c642e46"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\service\\CleanupService.java": {
+    "mtime": 1780235709.2762766,
+    "ast_hash": "79d9b8f9221812fc710bec9ca17eb65d",
+    "semantic_hash": "79d9b8f9221812fc710bec9ca17eb65d"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\service\\QrCodeService.java": {
+    "mtime": 1780235709.2762766,
+    "ast_hash": "ab45e27e5a59c5cfff9749e271e51376",
+    "semantic_hash": "ab45e27e5a59c5cfff9749e271e51376"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\service\\RateLimitingService.java": {
+    "mtime": 1780235709.2762766,
+    "ast_hash": "deafd859b20453703e32b1d567244fe2",
+    "semantic_hash": "deafd859b20453703e32b1d567244fe2"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\service\\UrlService.java": {
+    "mtime": 1780235709.279422,
+    "ast_hash": "ac133d14ea881245fcff0f29b83f5388",
+    "semantic_hash": "ac133d14ea881245fcff0f29b83f5388"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\main\\java\\in\\proofofconcept\\url\\shortner\\service\\UserDetailsServiceImpl.java": {
+    "mtime": 1780235709.279422,
+    "ast_hash": "d46a18ef60a40ab80c6718ad38bd465a",
+    "semantic_hash": "d46a18ef60a40ab80c6718ad38bd465a"
+  },
+  "C:\\Personal Project\\url-shortner\\src\\test\\java\\in\\proofofconcept\\url\\shortner\\UrlShortnerApplicationTests.java": {
+    "mtime": 1780235709.2814305,
+    "ast_hash": "6b2945d26a7aba17eb2883dd6e245fa5",
+    "semantic_hash": "6b2945d26a7aba17eb2883dd6e245fa5"
+  }
+}

@@ -1,14 +1,9 @@
 package in.proofofconcept.url.shortner.service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
-import java.util.Random;
-import java.util.UUID;
 
 import in.proofofconcept.url.shortner.exception.CustomException;
-import org.hibernate.boot.model.naming.IllegalIdentifierException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +16,8 @@ import in.proofofconcept.url.shortner.repository.UserRepository;
 import in.proofofconcept.url.shortner.repository.UrlRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
@@ -44,7 +41,12 @@ public class UrlService {
     }
 
 	public User getCurrentUser() {
-		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication == null || !authentication.isAuthenticated()
+				|| authentication instanceof AnonymousAuthenticationToken) {
+			throw new CustomException("Authentication is required");
+		}
+		String username = authentication.getName();
 		return userRepository.findByUsername(username)
 				.orElseThrow(() -> new CustomException("User not found in context"));
 	}
@@ -73,7 +75,7 @@ public class UrlService {
 	public Url findByShortUrl(String shortUrl) {
 		Url url = urlRepository.findByShortUrl(shortUrl);
 
-		if (url != null && url.getExpiryDate().isAfter(LocalDateTime.now())) {
+		if (url != null && (url.getExpiryDate() == null || url.getExpiryDate().isAfter(LocalDateTime.now()))) {
 			url.setClicks(url.getClicks() + 1);
 			urlRepository.save(url);
 			return url;

@@ -1,0 +1,283 @@
+{
+  "communities": {
+    "0": [
+      "bucket",
+      "controller_urlcontroller_urlcontroller",
+      "controller_urlcontroller_urlcontroller_createmultipleshorturls",
+      "controller_urlcontroller_urlcontroller_createshorturl",
+      "controller_urlcontroller_urlcontroller_getallurls",
+      "controller_urlcontroller_urlcontroller_geturlanalytics",
+      "controller_urlcontroller_urlcontroller_geturlanalyticssummary",
+      "controller_urlcontroller_urlcontroller_updateurl",
+      "getmapping",
+      "localdatetime",
+      "model_clickanalytics_clickanalytics",
+      "model_url_url",
+      "putmapping",
+      "ratelimitingservice",
+      "request_urlrequest_urlrequest",
+      "response_clickanalyticsresponse_clickanalyticsresponse",
+      "response_errorresponse_errorresponse",
+      "response_urlresponse_urlresponse",
+      "service_ratelimitingservice_ratelimitingservice",
+      "service_ratelimitingservice_ratelimitingservice_getcreateurlbucket",
+      "service_ratelimitingservice_ratelimitingservice_getredirectbucket",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_autowired",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_httpservletrequest",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_list",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_long",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_map",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_object",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_postmapping",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_responseentity",
+      "src_main_java_in_proofofconcept_url_shortner_dto_response_errorresponse_java",
+      "src_main_java_in_proofofconcept_url_shortner_model_url_java",
+      "src_main_java_in_proofofconcept_url_shortner_service_ratelimitingservice_java_string",
+      "urlservice"
+    ],
+    "1": [
+      "chatmodel",
+      "qrcodeservice",
+      "service_qrcodeservice_qrcodeservice_generateqrcodebase64",
+      "service_urlservice_urlservice",
+      "service_urlservice_urlservice_deleteurl",
+      "service_urlservice_urlservice_enrichurlwithai",
+      "service_urlservice_urlservice_findbyshorturl",
+      "service_urlservice_urlservice_fromrequest",
+      "service_urlservice_urlservice_generateshorturl",
+      "service_urlservice_urlservice_generatesmartslug",
+      "service_urlservice_urlservice_getoriginalurlbyid",
+      "service_urlservice_urlservice_handleonetimeuse",
+      "service_urlservice_urlservice_savemultipleurls",
+      "service_urlservice_urlservice_saveurl",
+      "service_urlservice_urlservice_toresponse",
+      "service_urlservice_urlservice_updateurl",
+      "service_urlservice_urlservice_verifypassword",
+      "src_main_java_in_proofofconcept_url_shortner_service_qrcodeservice_java_string",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_autowired",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_list",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_long",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_modelmapper",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_string",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_url",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_urlrepository",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_urlrequest",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_urlresponse",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_userrepository"
+    ],
+    "2": [
+      "analyticsservice",
+      "async",
+      "clickanalyticsrepository",
+      "repository_clickanalyticsrepository_clickanalyticsrepository_findbyurlid",
+      "service_analyticsservice_analyticsservice",
+      "service_analyticsservice_analyticsservice_getanalyticsbyurlid",
+      "service_analyticsservice_analyticsservice_getanalyticssummary",
+      "service_analyticsservice_analyticsservice_parseuseragent",
+      "service_analyticsservice_analyticsservice_recordclick",
+      "service_analyticsservice_analyticsservice_resolvecountry",
+      "service_analyticsservice_analyticsservice_toanalyticsresponse",
+      "src_main_java_in_proofofconcept_url_shortner_repository_clickanalyticsrepository_java_clickanalytics",
+      "src_main_java_in_proofofconcept_url_shortner_repository_clickanalyticsrepository_java_list",
+      "src_main_java_in_proofofconcept_url_shortner_repository_clickanalyticsrepository_java_long",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_clickanalytics",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_clickanalyticsresponse",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_httpservletrequest",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_list",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_long",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_map",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_object",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_string",
+      "src_main_java_in_proofofconcept_url_shortner_service_analyticsservice_java_url"
+    ],
+    "3": [
+      "repository_urlrepository_urlrepository",
+      "repository_urlrepository_urlrepository_findallbyexpirydatebefore",
+      "repository_urlrepository_urlrepository_findbyshorturl",
+      "scheduled",
+      "service_cleanupservice_cleanupservice",
+      "service_cleanupservice_cleanupservice_cleanupexpiredurls",
+      "src_main_java_in_proofofconcept_url_shortner_repository_urlrepository_java",
+      "src_main_java_in_proofofconcept_url_shortner_repository_urlrepository_java_list",
+      "src_main_java_in_proofofconcept_url_shortner_repository_urlrepository_java_string",
+      "src_main_java_in_proofofconcept_url_shortner_repository_urlrepository_java_url",
+      "src_main_java_in_proofofconcept_url_shortner_service_cleanupservice_java_urlrepository",
+      "transactional"
+    ],
+    "4": [
+      "optional",
+      "override",
+      "repository_userrepository_userrepository",
+      "repository_userrepository_userrepository_findbyusername",
+      "service_userdetailsserviceimpl_userdetailsserviceimpl_loaduserbyusername",
+      "src_main_java_in_proofofconcept_url_shortner_repository_userrepository_java",
+      "src_main_java_in_proofofconcept_url_shortner_repository_userrepository_java_string",
+      "src_main_java_in_proofofconcept_url_shortner_repository_userrepository_java_user",
+      "src_main_java_in_proofofconcept_url_shortner_service_userdetailsserviceimpl_java_string",
+      "src_main_java_in_proofofconcept_url_shortner_service_userdetailsserviceimpl_java_userrepository",
+      "userdetails",
+      "userdetailsservice"
+    ],
+    "5": [
+      "customexception",
+      "errorresponse",
+      "exception",
+      "exception_globalexceptionhandler_globalexceptionhandler",
+      "exception_globalexceptionhandler_globalexceptionhandler_handlecustomexception",
+      "exception_globalexceptionhandler_globalexceptionhandler_handleglobalexception",
+      "exceptionhandler",
+      "runtimeexception",
+      "src_main_java_in_proofofconcept_url_shortner_exception_customexception_java_string",
+      "src_main_java_in_proofofconcept_url_shortner_exception_globalexceptionhandler_java_httpservletrequest",
+      "src_main_java_in_proofofconcept_url_shortner_exception_globalexceptionhandler_java_responseentity"
+    ],
+    "6": [
+      "controller_urlcontroller_urlcontroller_deleteall",
+      "controller_urlcontroller_urlcontroller_deleteurl",
+      "deletemapping",
+      "service_urlservice_urlservice_deleteallurls",
+      "service_urlservice_urlservice_getallresponses",
+      "service_urlservice_urlservice_getcurrentuser",
+      "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_string",
+      "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_user"
+    ],
+    "7": [
+      "authservice",
+      "controller_authcontroller_authcontroller",
+      "controller_authcontroller_authcontroller_register",
+      "response_authresponse_authresponse",
+      "src_main_java_in_proofofconcept_url_shortner_controller_authcontroller_java_authrequest",
+      "src_main_java_in_proofofconcept_url_shortner_controller_authcontroller_java_postmapping",
+      "src_main_java_in_proofofconcept_url_shortner_controller_authcontroller_java_responseentity"
+    ],
+    "8": [
+      "service_authservice_authservice",
+      "service_authservice_authservice_register",
+      "src_main_java_in_proofofconcept_url_shortner_service_authservice_java",
+      "src_main_java_in_proofofconcept_url_shortner_service_authservice_java_authrequest",
+      "src_main_java_in_proofofconcept_url_shortner_service_authservice_java_authresponse",
+      "src_main_java_in_proofofconcept_url_shortner_service_authservice_java_passwordencoder",
+      "src_main_java_in_proofofconcept_url_shortner_service_authservice_java_userrepository"
+    ],
+    "9": [
+      "shortner_urlshortnerapplication_urlshortnerapplication",
+      "shortner_urlshortnerapplication_urlshortnerapplication_main",
+      "shortner_urlshortnerapplication_urlshortnerapplication_modelmapper",
+      "shortner_urlshortnerapplicationtests_urlshortnerapplicationtests_contextloads",
+      "src_main_java_in_proofofconcept_url_shortner_urlshortnerapplication_java_bean",
+      "src_main_java_in_proofofconcept_url_shortner_urlshortnerapplication_java_string",
+      "test"
+    ],
+    "10": [
+      "config_securityconfig_securityconfig",
+      "config_securityconfig_securityconfig_passwordencoder",
+      "httpsecurity",
+      "securityfilterchain",
+      "src_main_java_in_proofofconcept_url_shortner_config_securityconfig_java",
+      "src_main_java_in_proofofconcept_url_shortner_config_securityconfig_java_bean"
+    ],
+    "11": [
+      "readme_apache_maven",
+      "readme_mysql",
+      "readme_spring_boot",
+      "readme_spring_data_jpa",
+      "readme_spring_web",
+      "readme_url_shortener"
+    ],
+    "12": [
+      "request_authrequest_authrequest",
+      "src_main_java_in_proofofconcept_url_shortner_dto_request_authrequest_java"
+    ],
+    "13": [
+      "model_user_user",
+      "src_main_java_in_proofofconcept_url_shortner_model_user_java"
+    ]
+  },
+  "cohesion": {
+    "0": 0.11764705882352941,
+    "1": 0.15763546798029557,
+    "2": 0.16205533596837945,
+    "3": 0.24242424242424243,
+    "4": 0.21212121212121213,
+    "5": 0.34545454545454546,
+    "6": 0.39285714285714285,
+    "7": 0.47619047619047616,
+    "8": 0.47619047619047616,
+    "9": 0.38095238095238093,
+    "10": 0.6666666666666666,
+    "11": 0.4,
+    "12": 1.0,
+    "13": 1.0
+  },
+  "gods": [
+    {
+      "id": "service_urlservice_urlservice",
+      "label": "UrlService",
+      "degree": 23
+    },
+    {
+      "id": "controller_urlcontroller_urlcontroller",
+      "label": "UrlController",
+      "degree": 14
+    },
+    {
+      "id": "analyticsservice",
+      "label": "AnalyticsService",
+      "degree": 12
+    },
+    {
+      "id": "localdatetime",
+      "label": "LocalDateTime",
+      "degree": 12
+    },
+    {
+      "id": "src_main_java_in_proofofconcept_url_shortner_service_urlservice_java_url",
+      "label": "Url",
+      "degree": 11
+    },
+    {
+      "id": "src_main_java_in_proofofconcept_url_shortner_controller_urlcontroller_java_responseentity",
+      "label": "ResponseEntity",
+      "degree": 10
+    },
+    {
+      "id": "service_analyticsservice_analyticsservice",
+      "label": "AnalyticsService",
+      "degree": 8
+    },
+    {
+      "id": "response_urlresponse_urlresponse",
+      "label": "UrlResponse",
+      "degree": 7
+    },
+    {
+      "id": "exception_globalexceptionhandler_globalexceptionhandler",
+      "label": "GlobalExceptionHandler",
+      "degree": 7
+    },
+    {
+      "id": "customexception",
+      "label": "CustomException",
+      "degree": 7
+    }
+  ],
+  "surprises": [
+    {
+      "source": "CustomException",
+      "target": "String",
+      "source_files": [
+        "src/main/java/in/proofofconcept/url/shortner/exception/GlobalExceptionHandler.java",
+        "src/main/java/in/proofofconcept/url/shortner/exception/CustomException.java"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "peripheral node `String` unexpectedly reaches hub `CustomException`"
+    }
+  ],
+  "tokens": {
+    "input": 779,
+    "output": 1225
+  }
+}
