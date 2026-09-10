@@ -1,11 +1,16 @@
 package in.proofofconcept.url.shortner.dto.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ClickAnalyticsResponse {
     private Long id;
     private LocalDateTime clickTimestamp;
@@ -15,4 +20,5 @@ public class ClickAnalyticsResponse {
     private String browser;
     private String operatingSystem;
     private String deviceType;
+    private String country;
 }

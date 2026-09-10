@@ -1,251 +1,363 @@
 package in.proofofconcept.url.shortner.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import in.proofofconcept.url.shortner.exception.CustomException;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import in.proofofconcept.url.shortner.dto.request.UrlRequest;
 import in.proofofconcept.url.shortner.dto.response.UrlResponse;
+import in.proofofconcept.url.shortner.exception.CustomException;
+import in.proofofconcept.url.shortner.model.RedirectType;
 import in.proofofconcept.url.shortner.model.Url;
 import in.proofofconcept.url.shortner.model.User;
-import in.proofofconcept.url.shortner.repository.UserRepository;
 import in.proofofconcept.url.shortner.repository.UrlRepository;
+import in.proofofconcept.url.shortner.repository.UserRepository;
+import in.proofofconcept.url.shortner.util.Base62Encoder;
+import in.proofofconcept.url.shortner.util.ReservedKeywordsValidator;
+import in.proofofconcept.url.shortner.util.SnowflakeIdGenerator;
+import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
+@Slf4j
 public class UrlService {
 
+    private final UrlRepository urlRepository;
+    private final UserRepository userRepository;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
+    private final ReservedKeywordsValidator reservedKeywordsValidator;
+    private final SafeBrowsingService safeBrowsingService;
+    private final QrCodeService qrCodeService;
+    private final ChatModel chatModel;
+    private final String baseUrl;
 
-	private final UrlRepository urlRepository;
-	private final UserRepository userRepository;
-	private final ModelMapper modelMapper;
-	private final ChatModel chatModel;
-	private final QrCodeService qrCodeService;
-
-	@Autowired
-    UrlService(UrlRepository urlRepository, UserRepository userRepository, ModelMapper modelMapper, ChatModel chatModel, 
-	           QrCodeService qrCodeService) {
+    @Autowired
+    public UrlService(
+            UrlRepository urlRepository,
+            UserRepository userRepository,
+            SnowflakeIdGenerator snowflakeIdGenerator,
+            ReservedKeywordsValidator reservedKeywordsValidator,
+            SafeBrowsingService safeBrowsingService,
+            QrCodeService qrCodeService,
+            @Autowired(required = false) ChatModel chatModel,
+            @Value("${app.base-url:http://localhost:8080}") String baseUrl) {
         this.urlRepository = urlRepository;
-		this.userRepository = userRepository;
-		this.modelMapper = modelMapper;
-		this.chatModel = chatModel;
-		this.qrCodeService = qrCodeService;
+        this.userRepository = userRepository;
+        this.snowflakeIdGenerator = snowflakeIdGenerator;
+        this.reservedKeywordsValidator = reservedKeywordsValidator;
+        this.safeBrowsingService = safeBrowsingService;
+        this.qrCodeService = qrCodeService;
+        this.chatModel = chatModel;
+        this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
     }
 
-	public User getCurrentUser() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (authentication == null || !authentication.isAuthenticated()
-				|| authentication instanceof AnonymousAuthenticationToken) {
-			throw new CustomException("Authentication is required");
-		}
-		String username = authentication.getName();
-		return userRepository.findByUsername(username)
-				.orElseThrow(() -> new CustomException("User not found in context"));
-	}
-	
-	public String generateSmartSlug(String originalUrl) {
-		String prompt = "Generate a short, 2-word, hyphenated slug for this URL: " + originalUrl + 
-		                ". Examples: 'quick-bake', 'travel-tips'. Return only the slug and nothing else.";
-		try {
-			String slug = chatModel.call(prompt).toLowerCase().trim();
-			// Basic cleanup in case AI adds extra text
-			slug = slug.replaceAll("[^a-z0-9-]", "");
-			
-			// Collision check
-			String finalSlug = slug;
-			int counter = 1;
-			while (urlRepository.findByShortUrl(finalSlug) != null) {
-				finalSlug = slug + "-" + counter++;
-			}
-			return finalSlug;
-		} catch (Exception e) {
-			// Fallback to standard hash-based short URL if AI fails
-			return generateShortUrl(originalUrl);
-		}
-	}
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            throw new CustomException("Authentication is required");
+        }
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException("User not found in context"));
+    }
 
-	public Url findByShortUrl(String shortUrl) {
-		Url url = urlRepository.findByShortUrl(shortUrl);
+    /**
+     * Creates and saves a shortened URL.
+     */
+    @Transactional
+    public Url createUrl(UrlRequest request) {
+        User currentUser = getCurrentUser();
 
-		if (url != null && (url.getExpiryDate() == null || url.getExpiryDate().isAfter(LocalDateTime.now()))) {
-			url.setClicks(url.getClicks() + 1);
-			urlRepository.save(url);
-			return url;
-		} else {
-			return null;
-		}
-	}
-	public Url saveUrl(Url url) {
-		// Associate with current user
-		url.setUser(getCurrentUser());
+        // 1. Threat Intelligence & Malicious URL Scanner
+        safeBrowsingService.validateUrlSafety(request.getOriginalUrl());
 
-		if (url.getPassword() != null && !url.getPassword().isBlank()) {
-			url.setPassword(BCrypt.hashpw(url.getPassword(), BCrypt.gensalt()));
-		}
+        // 2. Resolve short slug / alias
+        String shortSlug;
+        String requestedAlias = request.getEffectiveAlias();
 
-		// Perform AI Enhancements
-		enrichUrlWithAI(url);
-		
-		if (!url.isSafe()) {
-			throw new CustomException("Security Alert: The AI has flagged this URL as potentially unsafe or malicious.");
-		}
-		
-		if (url.getShortUrl() == null || url.getShortUrl().isBlank()) {
-			// auto-generate short URL
-			url.setShortUrl(generateShortUrl(url.getOriginalUrl()));
-		} else {
-			// custom alias provided
-			if (urlRepository.findByShortUrl(url.getShortUrl()) != null) {
-				throw new CustomException("Custom alias is already in use");
-			}
-		}
+        if (requestedAlias != null && !requestedAlias.isBlank()) {
+            // Validate custom alias against reserved keywords and regex
+            reservedKeywordsValidator.validateSlug(requestedAlias);
 
-		if (url.getExpiryDate() == null) {
-			// Set default expiry: 30 days
-			url.setExpiryDate(LocalDateTime.now().plusDays(30));
-		}
-		url.setClicks(0L);
+            if (urlRepository.existsByShortUrl(requestedAlias)) {
+                throw new CustomException("Custom alias '" + requestedAlias + "' is already in use. Please choose another one.");
+            }
+            shortSlug = requestedAlias;
+        } else {
+            // Generate unique Base62 token backed by distributed Snowflake ID generator
+            long uniqueId = snowflakeIdGenerator.nextId();
+            shortSlug = Base62Encoder.encodeWithPadding(uniqueId, 6);
 
-		return urlRepository.save(url);
-	}
+            // Safety check against collision
+            while (urlRepository.existsByShortUrl(shortSlug)) {
+                uniqueId = snowflakeIdGenerator.nextId();
+                shortSlug = Base62Encoder.encodeWithPadding(uniqueId, 6);
+            }
+        }
 
-	public List<Url> saveMultipleUrls(List<Url> urls) {
-		return urls.stream().map(this::saveUrl).toList();
-	}
+        // 3. Password Hashing
+        String hashedPassword = null;
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            hashedPassword = BCrypt.hashpw(request.getPassword().trim(), BCrypt.gensalt(10));
+        }
 
-	public String generateShortUrl(String originalUrl) {
-		try {
-			java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-			byte[] hash = digest.digest(originalUrl.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-			String encoded = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
-			String shortUrl = encoded.substring(0, 8);
+        // 4. Expiry & Click threshold setup
+        LocalDateTime expiry = request.getExpiryDate();
+        if (expiry == null) {
+            // Default 30-day TTL if not specified
+            expiry = LocalDateTime.now().plusDays(30);
+        }
 
-			// In case of a hash collision, append a random character until it's unique
-			while (urlRepository.findByShortUrl(shortUrl) != null) {
-				shortUrl += (char) (new java.util.Random().nextInt(26) + 'a');
-			}
-			return shortUrl;
-		} catch (java.security.NoSuchAlgorithmException e) {
-			// This should never happen
-			throw new RuntimeException("SHA-256 algorithm not found", e);
-		}
-	}
+        Long maxClicks = request.getMaxClicks();
+        if (request.isOneTimeUse()) {
+            maxClicks = 1L;
+        }
 
-	public Url getOriginalUrlById(Long id) {
-		return urlRepository.findById(id).orElse(null);
-	}
+        RedirectType redirectType = request.getRedirectType() != null
+                ? request.getRedirectType()
+                : RedirectType.TEMPORARY_302;
 
-	public Url updateUrl(Long id, Url updatedUrl) {
-		Url existingUrl = urlRepository.findById(id).orElse(null);
+        Url url = Url.builder()
+                .originalUrl(request.getOriginalUrl().trim())
+                .shortUrl(shortSlug)
+                .redirectType(redirectType)
+                .expiryDate(expiry)
+                .clicks(0L)
+                .maxClicks(maxClicks)
+                .isActive(true)
+                .password(hashedPassword)
+                .isOneTimeUse(request.isOneTimeUse())
+                .isSafe(true)
+                .user(currentUser)
+                .build();
 
-		if(existingUrl != null) {
-			existingUrl.setOriginalUrl(updatedUrl.getOriginalUrl());
-			existingUrl.setShortUrl(updatedUrl.getShortUrl());
-			existingUrl.setExpiryDate(updatedUrl.getExpiryDate());
-			return urlRepository.save(existingUrl);
-		}
-		return null;
-	}
+        // 5. Optional AI Enrichment
+        enrichUrlWithAI(url);
 
-	public boolean deleteUrl(Long id) {
-		try {
-			if(urlRepository.existsById(id)) {
-				urlRepository.deleteById(id);
-				return true;
-			}
-		} catch (Exception e) {
-			System.out.println(e);
-			throw new CustomException("this url is not valid");
-		}
-		return false;
-	}
+        return urlRepository.save(url);
+    }
 
+    public List<Url> createMultipleUrls(List<UrlRequest> requests) {
+        return requests.stream().map(this::createUrl).toList();
+    }
 
+    /**
+     * Resolves and validates a short URL for redirection.
+     * Increments click count and verifies TTL and click threshold.
+     */
+    @Transactional
+    public Url resolveAndIncrementClicks(String shortUrl) {
+        Url url = urlRepository.findByShortUrl(shortUrl);
+        if (url == null) {
+            return null;
+        }
 
+        // Check Click Threshold Expiration
+        if (url.getMaxClicks() != null && url.getClicks() >= url.getMaxClicks()) {
+            url.setActive(false);
+            urlRepository.save(url);
+            throw new CustomException("This link has reached its maximum click limit");
+        }
 
+        // Check TTL Expiration
+        if (url.getExpiryDate() != null && LocalDateTime.now().isAfter(url.getExpiryDate())) {
+            url.setActive(false);
+            urlRepository.save(url);
+            throw new CustomException("This link has expired");
+        }
 
-	public Url fromRequest(UrlRequest request) {
-		return modelMapper.map(request, Url.class);
-	}
+        // Check if explicitly deactivated
+        if (!url.isActive()) {
+            throw new CustomException("This link has been deactivated");
+        }
 
-	public UrlResponse toResponse(Url url) {
-		String qrCode = qrCodeService.generateQrCodeBase64(url.getShortUrl(), 250, 250);
-		return UrlResponse.builder()
-				.id(url.getId())
-				.originalUrl(url.getOriginalUrl())
-				.shortUrl(url.getShortUrl())
-				.expiryDate(url.getExpiryDate())
-				.clicks(url.getClicks())
-				.qrCodeBase64(qrCode)
-				.isPasswordProtected(url.getPassword() != null)
-				.isOneTimeUse(url.isOneTimeUse())
-				.summary(url.getSummary())
-				.category(url.getCategory())
-				.isSafe(url.isSafe())
-				.build();
-	}
+        // Increment Click Count
+        url.setClicks(url.getClicks() + 1);
 
-	private void enrichUrlWithAI(Url url) {
-		String prompt = """
-				Analyze this URL: %s
-				Provide a response in the following EXACT format:
-				Safe: [Yes/No]
-				Summary: [1-sentence description]
-				Category: [Work/Shopping/Social/Education/Entertainment/Other]
-				""".formatted(url.getOriginalUrl());
+        // Auto-deactivate if threshold is reached on this click
+        if (url.isOneTimeUse() || (url.getMaxClicks() != null && url.getClicks() >= url.getMaxClicks())) {
+            url.setActive(false);
+        }
 
-		try {
-			String response = chatModel.call(prompt);
-			String[] lines = response.split("\n");
-			
-			for (String line : lines) {
-				if (line.toLowerCase().startsWith("safe:")) {
-					url.setSafe(line.toLowerCase().contains("yes"));
-				} else if (line.toLowerCase().startsWith("summary:")) {
-					url.setSummary(line.substring(line.indexOf(":") + 1).trim());
-				} else if (line.toLowerCase().startsWith("category:")) {
-					url.setCategory(line.substring(line.indexOf(":") + 1).trim());
-				}
-			}
-		} catch (Exception e) {
-			// Fallback if AI fails
-			url.setSafe(true); 
-			url.setSummary("No summary available");
-			url.setCategory("Uncategorized");
-		}
-	}
+        return urlRepository.save(url);
+    }
 
-	public boolean verifyPassword(Url url, String rawPassword) {
-		if (url.getPassword() == null) return true;
-		if (rawPassword == null) return false;
-		return BCrypt.checkpw(rawPassword, url.getPassword());
-	}
+    public Url findByShortUrl(String shortUrl) {
+        return urlRepository.findByShortUrl(shortUrl);
+    }
 
-	public void handleOneTimeUse(Url url) {
-		if (url.isOneTimeUse()) {
-			urlRepository.delete(url);
-		}
-	}
+    public boolean verifyPassword(Url url, String rawPassword) {
+        if (url.getPassword() == null) return true;
+        if (rawPassword == null || rawPassword.isBlank()) return false;
+        try {
+            return BCrypt.checkpw(rawPassword.trim(), url.getPassword());
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
-	public List<UrlResponse> getAllResponses() {
-		User currentUser = getCurrentUser();
-		return urlRepository.findAll()
-				.stream()
-				.filter(url -> url.getUser() != null && url.getUser().getId().equals(currentUser.getId()))
-				.map(this::toResponse)
-				.toList();
-	}
+    public List<UrlResponse> getUserUrls() {
+        User currentUser = getCurrentUser();
+        return urlRepository.findAllByUserId(currentUser.getId())
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
-	public void deleteAllUrls() {
-		urlRepository.deleteAll();
-	}
+    public Url getOriginalUrlById(Long id) {
+        return urlRepository.findById(id).orElse(null);
+    }
 
+    @Transactional
+    public Url updateUrl(Long id, UrlRequest request) {
+        Url existing = urlRepository.findById(id).orElse(null);
+        if (existing == null) {
+            return null;
+        }
+
+        // Verify Ownership
+        User currentUser = getCurrentUser();
+        if (existing.getUser() == null || !existing.getUser().getId().equals(currentUser.getId())) {
+            throw new CustomException("You do not have permission to modify this URL");
+        }
+
+        if (request.getOriginalUrl() != null && !request.getOriginalUrl().isBlank()) {
+            safeBrowsingService.validateUrlSafety(request.getOriginalUrl());
+            existing.setOriginalUrl(request.getOriginalUrl().trim());
+        }
+
+        String requestedAlias = request.getEffectiveAlias();
+        if (requestedAlias != null && !requestedAlias.equalsIgnoreCase(existing.getShortUrl())) {
+            reservedKeywordsValidator.validateSlug(requestedAlias);
+            if (urlRepository.existsByShortUrl(requestedAlias)) {
+                throw new CustomException("Custom alias '" + requestedAlias + "' is already in use.");
+            }
+            existing.setShortUrl(requestedAlias);
+        }
+
+        if (request.getExpiryDate() != null) {
+            existing.setExpiryDate(request.getExpiryDate());
+        }
+
+        if (request.getMaxClicks() != null) {
+            existing.setMaxClicks(request.getMaxClicks());
+        }
+
+        if (request.getRedirectType() != null) {
+            existing.setRedirectType(request.getRedirectType());
+        }
+
+        if (request.getPassword() != null) {
+            if (request.getPassword().isBlank()) {
+                existing.setPassword(null); // Clear password
+            } else {
+                existing.setPassword(BCrypt.hashpw(request.getPassword().trim(), BCrypt.gensalt(10)));
+            }
+        }
+
+        return urlRepository.save(existing);
+    }
+
+    @Transactional
+    public Url toggleStatus(Long id) {
+        Url url = urlRepository.findById(id).orElse(null);
+        if (url == null) {
+            return null;
+        }
+
+        User currentUser = getCurrentUser();
+        if (url.getUser() == null || !url.getUser().getId().equals(currentUser.getId())) {
+            throw new CustomException("You do not have permission to modify this URL");
+        }
+
+        url.setActive(!url.isActive());
+        return urlRepository.save(url);
+    }
+
+    @Transactional
+    public boolean deleteUrl(Long id) {
+        Url url = urlRepository.findById(id).orElse(null);
+        if (url == null) {
+            return false;
+        }
+
+        User currentUser = getCurrentUser();
+        if (url.getUser() == null || !url.getUser().getId().equals(currentUser.getId())) {
+            throw new CustomException("You do not have permission to delete this URL");
+        }
+
+        urlRepository.delete(url);
+        return true;
+    }
+
+    public UrlResponse toResponse(Url url) {
+        String fullShortUrl = baseUrl + "/r/" + url.getShortUrl();
+        String qrDownloadUrl = baseUrl + "/api/v1/url/" + url.getShortUrl() + "/qr";
+        String qrCodeBase64 = qrCodeService.generateQrCodeBase64(fullShortUrl, 250, 250);
+
+        return UrlResponse.builder()
+                .id(url.getId())
+                .originalUrl(url.getOriginalUrl())
+                .shortUrl(url.getShortUrl())
+                .fullShortUrl(fullShortUrl)
+                .redirectType(url.getRedirectType())
+                .expiryDate(url.getExpiryDate())
+                .clicks(url.getClicks())
+                .maxClicks(url.getMaxClicks())
+                .isActive(url.isActive())
+                .qrCodeBase64(qrCodeBase64)
+                .qrCodeDownloadUrl(qrDownloadUrl)
+                .isPasswordProtected(url.getPassword() != null)
+                .isOneTimeUse(url.isOneTimeUse())
+                .summary(url.getSummary())
+                .category(url.getCategory())
+                .isSafe(url.isSafe())
+                .createdAt(url.getCreatedAt())
+                .build();
+    }
+
+    private void enrichUrlWithAI(Url url) {
+        if (chatModel == null) {
+            url.setSafe(true);
+            url.setSummary("AI enrichment unavailable");
+            url.setCategory("Uncategorized");
+            return;
+        }
+
+        String prompt = """
+                Analyze this URL: %s
+                Provide a response in the following EXACT format:
+                Safe: [Yes/No]
+                Summary: [1-sentence description]
+                Category: [Work/Shopping/Social/Education/Entertainment/Other]
+                """.formatted(url.getOriginalUrl());
+
+        try {
+            String response = chatModel.call(prompt);
+            String[] lines = response.split("\n");
+
+            for (String line : lines) {
+                if (line.toLowerCase().startsWith("safe:")) {
+                    url.setSafe(line.toLowerCase().contains("yes"));
+                } else if (line.toLowerCase().startsWith("summary:")) {
+                    url.setSummary(line.substring(line.indexOf(":") + 1).trim());
+                } else if (line.toLowerCase().startsWith("category:")) {
+                    url.setCategory(line.substring(line.indexOf(":") + 1).trim());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("AI analysis skipped or failed: {}", e.getMessage());
+            url.setSafe(true);
+            url.setSummary("No summary available");
+            url.setCategory("Uncategorized");
+        }
+    }
 }

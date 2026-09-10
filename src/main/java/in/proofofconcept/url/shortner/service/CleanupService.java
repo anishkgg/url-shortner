@@ -21,23 +21,25 @@ public class CleanupService {
     }
 
     /**
-     * Runs every day at 2:00 AM to remove expired URLs from the database.
-     * Cron format: second minute hour day month day-of-week
+     * Runs every hour to mark expired URLs as inactive and log cleanup statistics.
      */
-    @Scheduled(cron = "0 0 2 * * ?")
+    @Scheduled(cron = "0 0 * * * ?")
     @Transactional
     public void cleanupExpiredUrls() {
-        log.info("Starting scheduled cleanup of expired URLs...");
-        
+        log.info("Starting scheduled scan for expired active URLs...");
+
         LocalDateTime now = LocalDateTime.now();
-        List<Url> expiredUrls = urlRepository.findAllByExpiryDateBefore(now);
-        
-        if (!expiredUrls.isEmpty()) {
-            log.info("Found {} expired URLs. Deleting...", expiredUrls.size());
-            urlRepository.deleteAll(expiredUrls);
-            log.info("Cleanup completed successfully.");
+        List<Url> expiredActiveUrls = urlRepository.findAllByExpiryDateBeforeAndIsActiveTrue(now);
+
+        if (!expiredActiveUrls.isEmpty()) {
+            log.info("Found {} active URLs that have passed their expiration timestamp. Deactivating...", expiredActiveUrls.size());
+            for (Url url : expiredActiveUrls) {
+                url.setActive(false);
+            }
+            urlRepository.saveAll(expiredActiveUrls);
+            log.info("Deactivated {} expired URLs successfully.", expiredActiveUrls.size());
         } else {
-            log.info("No expired URLs found to clean up.");
+            log.info("No expired active URLs found.");
         }
     }
 }

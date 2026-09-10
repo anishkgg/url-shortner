@@ -12,18 +12,27 @@ import java.util.Base64;
 @Service
 public class QrCodeService {
 
-    public String generateQrCodeBase64(String text, int width, int height) {
+    /**
+     * Generates a QR Code and returns the raw PNG byte array.
+     */
+    public byte[] generateQrCodeBytes(String text, int width, int height) {
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, width, height);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream);
-            
-            byte[] pngData = outputStream.toByteArray();
-            return Base64.getEncoder().encodeToString(pngData);
+            return outputStream.toByteArray();
         } catch (Exception e) {
             throw new RuntimeException("Could not generate QR code", e);
         }
+    }
+
+    /**
+     * Generates a QR Code and returns the Base64-encoded string.
+     */
+    public String generateQrCodeBase64(String text, int width, int height) {
+        byte[] pngData = generateQrCodeBytes(text, width, height);
+        return Base64.getEncoder().encodeToString(pngData);
     }
 }
